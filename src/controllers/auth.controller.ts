@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserModel } from "../models/user.model";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwt";
 import { sendVerificationEmail } from "../utils/email";
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -118,4 +122,34 @@ export const loginUser = async (req: Request, res: Response) => {
 export const logoutUser = (req: Request, res: Response) => {
   res.clearCookie("refreshToken");
   res.json({ message: "Logged out successfully" });
+};
+
+export const refreshAccessToken = (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+      return res.status(403).json({ message: "Refresh token missing" });
+    }
+
+    let decoded;
+    try {
+      decoded = verifyRefreshToken(refreshToken) as {
+        id: string;
+        role: string;
+      };
+    } catch (err) {
+      return res
+        .status(403)
+        .json({ message: "Invalid or expired refresh token" });
+    }
+
+    const newAccessToken = generateAccessToken({
+      id: decoded.id,
+      role: decoded.role,
+    });
+
+    return res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    return res.status(500).json({ message: "Failed to refresh token" });
+  }
 };
