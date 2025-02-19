@@ -1,5 +1,6 @@
 import swaggerJSDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
 import { Express } from "express";
 
 const swaggerOptions = {
@@ -10,9 +11,9 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API documentation for the Skincare E-Commerce backend",
     },
-    servers: [{ url: "http://localhost:5000" }],
+    // servers: [{ url: "http://localhost:5000" }],
   },
-  apis: ["./src/routes/*.ts"],
+  apis: [path.join(__dirname, "../routes/*.ts")],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
