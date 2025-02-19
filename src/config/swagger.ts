@@ -11,7 +11,16 @@ const swaggerOptions = {
       version: "1.0.0",
       description: "API documentation for the Skincare E-Commerce backend",
     },
-    // servers: [{ url: "http://localhost:5000" }],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [{ BearerAuth: [] }],
   },
   apis: [path.join(__dirname, "../routes/*.ts")],
 };
