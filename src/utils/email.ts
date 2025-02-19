@@ -23,3 +23,18 @@ export const sendVerificationEmail = async (email: string, token: string) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+export const sendPasswordResetEmail = async (email: string, token: string) => {
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+  const mailOptions = {
+    from: `"Skincare Store" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Reset Your Password",
+    html: `<p>Click the link below to reset your password:</p>
+           <a href="${resetLink}">${resetLink}</a>
+           <p>This link will expire in 15 minutes.</p>`,
+  };
+
+  await transporter.sendMail(mailOptions);
+};

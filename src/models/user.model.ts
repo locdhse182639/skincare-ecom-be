@@ -17,6 +17,8 @@ const UserSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "manager", "staff"], default: "user" },
     isVerified: { type: Boolean, default: false },
     emailVerificationToken: { type: String },
+    passwordResetToken: { type: String, default: null },
+    passwordResetExpires: { type: Date, default: null },
     skinType: {
       type: String,
       enum: ["oily", "dry", "combination", "sensitive", "normal"],
