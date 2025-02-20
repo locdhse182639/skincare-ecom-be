@@ -3,7 +3,35 @@ import { ProductModel } from "../models/product.model";
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const newProduct = new ProductModel(req.body);
+    const {
+      name,
+      description,
+      brand,
+      category,
+      price,
+      stock,
+      skinType,
+      ingredients,
+    } = req.body;
+    const imageUrl = req.file?.path;
+
+    if (!imageUrl)
+      return res.status(400).json({ message: "Image upload failed" });
+
+    const newProduct = new ProductModel({
+      name,
+      description,
+      brand,
+      category,
+      price,
+      stock,
+      skinType: Array.isArray(skinType) ? skinType : JSON.parse(skinType),
+      ingredients: Array.isArray(ingredients)
+        ? ingredients
+        : JSON.parse(ingredients),
+      images: [imageUrl], // Save uploaded Cloudinary image URL
+    });
+
     await newProduct.save();
     res
       .status(201)
@@ -59,7 +87,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
     const totalProducts = await ProductModel.countDocuments(filter);
     const totalPages = Math.ceil(totalProducts / limitNumber);
-    
+
     res.json({
       products,
       totalProducts,

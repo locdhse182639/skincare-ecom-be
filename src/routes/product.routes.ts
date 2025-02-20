@@ -7,6 +7,7 @@ import {
   deleteProduct,
 } from "../controllers/product.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { upload } from "../config/cloudinary";
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const router = express.Router();
  * @swagger
  * /api/products:
  *   post:
- *     summary: Create a new product
+ *     summary: Create a new product with image upload
  *     tags:
  *       - Products
  *     security:
@@ -22,10 +23,14 @@ const router = express.Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: The product image to upload
  *               name:
  *                 type: string
  *                 example: "Hydrating Moisturizer"
@@ -37,8 +42,8 @@ const router = express.Router();
  *                 example: "BrandX"
  *               category:
  *                 type: string
- *                 enum: [cleanser, moisturizer, serum, sunscreen, toner, mask]
- *                 example: "moisturizer"
+ *                 enum: [Cleanser, Moisturizer, Serum, Sunscreen, Toner, Mask]
+ *                 example: "Moisturizer"
  *               price:
  *                 type: number
  *                 example: 19.99
@@ -60,7 +65,7 @@ const router = express.Router();
  *       201:
  *         description: Product created successfully
  */
-router.post("/", authMiddleware, createProduct);
+router.post("/", authMiddleware, upload.single("image"), createProduct);
 
 /**
  * @swagger
