@@ -23,8 +23,9 @@ const swaggerOptions = {
     security: [{ BearerAuth: [] }],
   },
   apis: [
-    path.join(__dirname, "../routes/*.ts"), // Development
-    path.join(__dirname, "../dist/routes/*.js"), // Production
+    process.env.NODE_ENV === "production"
+      ? path.join(__dirname, "../dist/routes/*.js") // Production
+      : path.join(__dirname, "../routes/*.ts"), // Development
   ],
 };
 
