@@ -6,6 +6,7 @@ import {
   updateOrderToPaid,
   updateOrderToDelivered,
   getAllOrders,
+  cancelOrder
 } from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
@@ -225,5 +226,33 @@ router.put(
  *         description: Access denied (Admin only)
  */
 router.get("/admin", authMiddleware, adminMiddleware, getAllOrders);
+
+/**
+ * @swagger
+ * /api/orders/{id}/cancel:
+ *   put:
+ *     summary: Cancel an order (User or Admin)
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The order ID
+ *     responses:
+ *       200:
+ *         description: Order canceled successfully
+ *       400:
+ *         description: Cannot cancel an order that has already been processed
+ *       403:
+ *         description: Unauthorized to cancel this order
+ *       404:
+ *         description: Order not found
+ */
+router.put("/:id/cancel", authMiddleware, cancelOrder);
 
 export default router;

@@ -166,14 +166,55 @@ export const getAllOrders = async (req: Request, res: Response) => {
       .skip(skip)
       .limit(Number(limit));
 
-    res
-      .status(200)
-      .json({
-        orders,
-        totalPages: Math.ceil(totalOrders / Number(limit)),
-        currentPage: Number(page),
-      });
+    res.status(200).json({
+      orders,
+      totalPages: Math.ceil(totalOrders / Number(limit)),
+      currentPage: Number(page),
+    });
   } catch (err) {
     res.status(500).json({ message: "Error retrieving orders", error: err });
+  }
+};
+
+/**
+ * @desc Cancel an Order (User or Admin)
+ * @route PUT /api/orders/:id/cancel
+ * @access Private (User or Admin)
+ */
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const order = await OrderModel.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    //kiem tra xem order da shipped chua
+    if (order.orderStatus !== "Pending") {
+      return res
+        .status(400)
+        .json({
+          message: "Cannot cancel an order that has already been processed",
+        });
+    }
+
+    //chi cho user cancel order cua chinh minh hoac admin
+    if (req.user?.id !== order.user.toString() && req.user?.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to cancel this order" });
+    }
+
+    order.orderStatus = "Cancelled";
+    order.isPaid = false;
+
+    const canceledOrder = await order.save();
+
+    res.status(200).json({
+      message: "Order canceled successfully",
+      order: canceledOrder,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error canceling order", error });
   }
 };
