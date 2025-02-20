@@ -22,7 +22,10 @@ const swaggerOptions = {
     },
     security: [{ BearerAuth: [] }],
   },
-  apis: [path.join(__dirname, "../routes/*.ts")],
+  apis: [
+    path.join(__dirname, "../routes/*.ts"), // Development
+    path.join(__dirname, "../dist/routes/*.js"), // Production
+  ],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
