@@ -4,7 +4,7 @@ import {
   updateUserProfile,
   changeUserPassword,
 } from "../controllers/user.controller";
-import { authenticateToken } from "../middleware/auth.middleware"; // Ensure routes are protected
+import { authMiddleware } from "../middleware/auth.middleware"; // Ensure routes are protected
 
 const router = express.Router();
 
@@ -23,7 +23,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get("/profile", authenticateToken, getUserProfile);
+router.get("/profile", authMiddleware, getUserProfile);
 
 /**
  * @swagger
@@ -72,7 +72,7 @@ router.get("/profile", authenticateToken, getUserProfile);
  *       401:
  *         description: Unauthorized
  */
-router.put("/profile", authenticateToken, updateUserProfile);
+router.put("/profile", authMiddleware, updateUserProfile);
 
 /**
  * @swagger
@@ -104,6 +104,6 @@ router.put("/profile", authenticateToken, updateUserProfile);
  *       401:
  *         description: Unauthorized
  */
-router.put("/change-password", authenticateToken, changeUserPassword);
+router.put("/change-password", authMiddleware, changeUserPassword);
 
 export default router;

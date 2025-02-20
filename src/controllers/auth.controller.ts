@@ -85,7 +85,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const user = await UserModel.findOne({ email });
+  const user = await UserModel.findOne({ email }).select("+password");
   if (!user) return res.status(404).json({ message: "User not found" });
 
   if (!user.isVerified)
@@ -94,7 +94,11 @@ export const loginUser = async (req: Request, res: Response) => {
       .json({ message: "Please verify your email before logging in." });
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+  if (!isMatch)
+    return res.status(401).json({
+      message: "Invalid credentials",
+    });
 
   const userPayload = { id: user._id.toString(), role: user.role };
   const accessToken = generateAccessToken(userPayload);
@@ -178,17 +182,20 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as { id: string };
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as {
+      id: string;
+    };
     const user = await UserModel.findOne({
       _id: decoded.id,
       passwordResetToken: token,
       passwordResetExpires: { $gt: new Date() }, // Ensure token is not expired
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+    if (!user)
+      return res.status(400).json({ message: "Invalid or expired token" });
 
     user.password = newPassword;
-    user.passwordResetToken = '';
+    user.passwordResetToken = "";
     user.passwordResetExpires = new Date(0);
     await user.save();
 
