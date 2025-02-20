@@ -66,7 +66,7 @@ router.post("/", authMiddleware, createProduct);
  * @swagger
  * /api/products:
  *   get:
- *     summary: Get all products with pagination
+ *     summary: Get all products with pagination, filtering, and search
  *     tags:
  *       - Products
  *     parameters:
@@ -80,9 +80,34 @@ router.post("/", authMiddleware, createProduct);
  *         schema:
  *           type: integer
  *         description: Number of products per page
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: Search for products by name, description, or brand
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category (Cleanser, Moisturizer, Serum, Sunscreen, Toner, Mask)
+ *       - in: query
+ *         name: skinType
+ *         schema:
+ *           type: string
+ *         description: Filter by skin type (oily, dry, combination, sensitive, all)
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price filter
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price filter
  *     responses:
  *       200:
- *         description: A list of products with pagination
+ *         description: A list of filtered and paginated products
  */
 router.get("/", getProducts);
 

@@ -15,20 +15,51 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    let { page = "1", limit = "10" } = req.query;
+    let {
+      page = "1",
+      limit = "10",
+      keyword,
+      category,
+      skinType,
+      minPrice,
+      maxPrice,
+    } = req.query;
 
     const pageNumber = parseInt(page as string, 10) || 1;
     const limitNumber = parseInt(limit as string, 10) || 10;
     const skip = (pageNumber - 1) * limitNumber;
 
-    const products = await ProductModel.find({ isDeleted: false })
+    let filter: any = { isDeleted: false };
+
+    if (keyword) {
+      filter.$or = [
+        { name: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+        { brand: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    if (category) {
+      filter.category = category;
+    }
+
+    if (skinType) {
+      filter.skinType = { $in: skinType };
+    }
+
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = parseFloat(minPrice as string);
+      if (maxPrice) filter.price.$lte = parseFloat(maxPrice as string);
+    }
+
+    const products = await ProductModel.find(filter)
       .skip(skip)
       .limit(limitNumber);
 
-    const totalProducts = await ProductModel.countDocuments({
-      isDeleted: false,
-    });
+    const totalProducts = await ProductModel.countDocuments(filter);
     const totalPages = Math.ceil(totalProducts / limitNumber);
+    
     res.json({
       products,
       totalProducts,
