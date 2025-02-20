@@ -15,6 +15,13 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
     totalAmount: { type: Number, required: true },
+    paymentMethod: {
+      type: String,
+      enum: ["Stripe", "VNPay"],
+      required: true,
+    },
+    isRefunded: { type: Boolean, default: false },
+    refundedAt: { type: Date },
     isPaid: { type: Boolean, default: false },
     paidAt: { type: Date },
     paymentResult: {
@@ -40,7 +47,7 @@ const OrderSchema = new mongoose.Schema(
       province: { type: String, required: true },
       phone: { type: String, required: true },
     },
-    deliveredAt: { type: Date }
+    deliveredAt: { type: Date },
   },
   { timestamps: true }
 );

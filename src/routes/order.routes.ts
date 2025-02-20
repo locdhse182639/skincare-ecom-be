@@ -6,7 +6,7 @@ import {
   updateOrderToPaid,
   updateOrderToDelivered,
   getAllOrders,
-  cancelOrder
+  cancelOrder,
 } from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
