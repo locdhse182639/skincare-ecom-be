@@ -1,5 +1,5 @@
 import express from "express";
-import { createOrder, getOrderById, getUserOrders, updateOrderToPaid, updateOrderToDelivered } from "../controllers/order.controller";
+import { createOrder, getOrderById, getUserOrders, updateOrderToPaid, updateOrderToDelivered, getAllOrders } from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
@@ -174,6 +174,24 @@ router.put("/:id/pay", authMiddleware, updateOrderToPaid);
  *         description: Order not found
  */
 router.put("/:id/deliver", authMiddleware, adminMiddleware, updateOrderToDelivered);
+
+/**
+ * @swagger
+ * /api/orders/admin:
+ *   get:
+ *     summary: Get all orders (Admin only)
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Orders retrieved successfully
+ *       403:
+ *         description: Access denied (Admin only)
+ */
+router.get("/admin", authMiddleware, adminMiddleware, getAllOrders);
+
 
 
 export default router;

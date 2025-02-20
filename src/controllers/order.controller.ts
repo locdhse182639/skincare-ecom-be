@@ -134,3 +134,18 @@ export const updateOrderToDelivered = async (req: Request, res: Response) => {
       .json({ message: "Error updating order delivery status", error });
   }
 };
+
+/**
+ * @desc Get all orders (Admin only)
+ * @route GET /api/orders/admin
+ * @access Private (Admin only)
+ */
+export const getAllOrders = async (req: Request, res: Response) => {
+    try{
+        const orders = await OrderModel.find().populate("user", "name email").sort({createAt: -1});
+
+        res.status(200).json({orders});
+    } catch (err){
+        res.status(500).json({message: "Error retrieving orders", error: err});
+    }
+}
