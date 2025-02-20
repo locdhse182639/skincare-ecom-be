@@ -82,10 +82,10 @@ router.get("/verify-email", verifyEmail);
  *             properties:
  *               email:
  *                 type: string
- *                 example: john@example.com
+ *                 example: shigesotarks@gmail.com
  *               password:
  *                 type: string
- *                 example: password123
+ *                 example: 123
  *     responses:
  *       200:
  *         description: Login successful
