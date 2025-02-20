@@ -8,7 +8,7 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
 }
 
-export const authenticateToken = (
+export const authMiddleware = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction

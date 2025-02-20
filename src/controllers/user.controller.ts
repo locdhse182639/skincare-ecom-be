@@ -48,7 +48,7 @@ export const changeUserPassword = async (req: AuthenticatedRequest, res: Respons
     if (!isMatch)
       return res.status(400).json({ message: "Incorrect password" });
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword
     await user.save();
 
     res.json({ message: "Password changed successfully" });
