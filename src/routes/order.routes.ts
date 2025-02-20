@@ -7,6 +7,7 @@ import {
   updateOrderToDelivered,
   getAllOrders,
   cancelOrder,
+  getOrderAnalytics,
 } from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
@@ -254,5 +255,27 @@ router.get("/admin", authMiddleware, adminMiddleware, getAllOrders);
  *         description: Order not found
  */
 router.put("/:id/cancel", authMiddleware, cancelOrder);
+
+/**
+ * @swagger
+ * /api/orders/admin/analytics:
+ *   get:
+ *     summary: Get order analytics for admin dashboard
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Order analytics retrieved successfully
+ *       403:
+ *         description: Unauthorized, only admins can access
+ */
+router.get(
+  "/admin/analytics",
+  authMiddleware,
+  adminMiddleware,
+  getOrderAnalytics
+);
 
 export default router;

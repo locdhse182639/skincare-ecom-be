@@ -187,57 +187,102 @@ export const getAllOrders = async (req: Request, res: Response) => {
  * @access Private (User or Admin)
  */
 export const cancelOrder = async (req: Request, res: Response) => {
-    try {
-      const order = await OrderModel.findById(req.params.id);
-  
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-  
-      if (order.orderStatus !== "Pending") {
-        return res.status(400).json({
-          message: "Cannot cancel an order that has already been processed",
-        });
-      }
-  
-      // 🔒 Only allow the owner or an admin to cancel
-      if (req.user?.id !== order.user.toString() && req.user?.role !== "admin") {
-        return res
-          .status(403)
-          .json({ message: "You are not authorized to cancel this order" });
-      }
-  
-      order.orderStatus = "Cancelled";
-  
-      if (order.isPaid) {
-        if (order.paymentMethod === "VNPay") {
+  try {
+    const order = await OrderModel.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.orderStatus !== "Pending") {
+      return res.status(400).json({
+        message: "Cannot cancel an order that has already been processed",
+      });
+    }
+
+    // 🔒 Only allow the owner or an admin to cancel
+    if (req.user?.id !== order.user.toString() && req.user?.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to cancel this order" });
+    }
+
+    order.orderStatus = "Cancelled";
+
+    if (order.isPaid) {
+      if (order.paymentMethod === "VNPay") {
+        order.paymentStatus = "Failed";
+      } else if (order.paymentMethod === "Stripe") {
+        try {
+          const refund = await stripe.refunds.create({
+            payment_intent: order.paymentResult?.id as string,
+          });
+          order.isRefunded = true;
+          order.refundedAt = new Date();
+          order.isPaid = false;
           order.paymentStatus = "Failed";
-        } else if (order.paymentMethod === "Stripe") {
-          try {
-            const refund = await stripe.refunds.create({
-              payment_intent: order.paymentResult?.id as string, 
-            });
-            order.isRefunded = true;
-            order.refundedAt = new Date();
-            order.isPaid = false;
-            order.paymentStatus = "Failed"; 
-          } catch (error) {
-            return res
-              .status(500)
-              .json({ message: "Error processing Stripe refund", error });
-          }
+        } catch (error) {
+          return res
+            .status(500)
+            .json({ message: "Error processing Stripe refund", error });
         }
       }
-  
-      await order.save();
-  
-      res.status(200).json({
-        message: "Order canceled successfully",
-        order,
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Error canceling order", error });
     }
-  };
 
+    await order.save();
 
+    res.status(200).json({
+      message: "Order canceled successfully",
+      order,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error canceling order", error });
+  }
+};
+
+/**
+ * @desc Get order analytics for admin dashboard
+ * @route GET /api/orders/admin/analytics
+ * @access Private (Admin only)
+ */
+export const getOrderAnalytics = async (req: Request, res: Response) => {
+  try {
+    const totalOrders = await OrderModel.countDocuments();
+
+    const totalRevenue = await OrderModel.aggregate([
+      { $match: { isPaid: true } },
+      { $group: { _id: null, sales: { $sum: "$totalAmount" } } },
+    ]);
+
+    const orderByStatus = await OrderModel.aggregate([
+      { $group: { _id: "$orderStatus", count: { $sum: 1 } } },
+    ]);
+
+    const monthlySales = await OrderModel.aggregate([
+      {
+        $match: { isPaid: true },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          totalSales: { $sum: "$totalAmount" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    res.status(200).json({
+      totalOrders,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      orderByStatus,
+      monthlySales,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error retrieving order analytics", error: err });
+  }
+};
