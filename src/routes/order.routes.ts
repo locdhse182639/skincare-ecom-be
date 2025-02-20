@@ -1,5 +1,12 @@
 import express from "express";
-import { createOrder, getOrderById, getUserOrders, updateOrderToPaid, updateOrderToDelivered, getAllOrders } from "../controllers/order.controller";
+import {
+  createOrder,
+  getOrderById,
+  getUserOrders,
+  updateOrderToPaid,
+  updateOrderToDelivered,
+  getAllOrders,
+} from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
@@ -173,17 +180,44 @@ router.put("/:id/pay", authMiddleware, updateOrderToPaid);
  *       404:
  *         description: Order not found
  */
-router.put("/:id/deliver", authMiddleware, adminMiddleware, updateOrderToDelivered);
+router.put(
+  "/:id/deliver",
+  authMiddleware,
+  adminMiddleware,
+  updateOrderToDelivered
+);
 
 /**
  * @swagger
  * /api/orders/admin:
  *   get:
- *     summary: Get all orders (Admin only)
+ *     summary: Get all orders with filtering & pagination (Admin only)
  *     tags:
  *       - Orders
  *     security:
  *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number for pagination (default: 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of items per page (default: 10)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Pending, Processing, Shipped, Delivered]
+ *         description: Filter orders by status
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by user email
  *     responses:
  *       200:
  *         description: Orders retrieved successfully
@@ -191,7 +225,5 @@ router.put("/:id/deliver", authMiddleware, adminMiddleware, updateOrderToDeliver
  *         description: Access denied (Admin only)
  */
 router.get("/admin", authMiddleware, adminMiddleware, getAllOrders);
-
-
 
 export default router;

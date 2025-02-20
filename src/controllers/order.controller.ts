@@ -136,16 +136,44 @@ export const updateOrderToDelivered = async (req: Request, res: Response) => {
 };
 
 /**
- * @desc Get all orders (Admin only)
+ * @desc Get all orders with pagination and filter (Admin only)
  * @route GET /api/orders/admin
  * @access Private (Admin only)
  */
 export const getAllOrders = async (req: Request, res: Response) => {
-    try{
-        const orders = await OrderModel.find().populate("user", "name email").sort({createAt: -1});
+  try {
+    const { page = 1, limit = 10, status, search } = req.query;
 
-        res.status(200).json({orders});
-    } catch (err){
-        res.status(500).json({message: "Error retrieving orders", error: err});
+    const query: any = {};
+
+    //filter = order status
+    if (status) query.orderStatus = status;
+
+    //search = email
+    if (search) {
+      query.$or = [
+        { "user.email": { $regex: search, $options: "i" } }, //case-insensitive search
+      ];
     }
-}
+
+    //pagination
+    const skip = (Number(page) - 1) * Number(limit);
+    const totalOrders = await OrderModel.countDocuments(query);
+
+    const orders = await OrderModel.find(query)
+      .populate("user", "name email")
+      .sort({ createAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    res
+      .status(200)
+      .json({
+        orders,
+        totalPages: Math.ceil(totalOrders / Number(limit)),
+        currentPage: Number(page),
+      });
+  } catch (err) {
+    res.status(500).json({ message: "Error retrieving orders", error: err });
+  }
+};
