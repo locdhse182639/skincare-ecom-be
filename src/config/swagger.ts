@@ -32,5 +32,9 @@ const swaggerOptions = {
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
 
 export const setupSwagger = (app: Express) => {
+  console.log("Swagger is being initialized with routes from:", swaggerOptions.apis);
+  console.log("Generated Swagger JSON:", JSON.stringify(swaggerSpec, null, 2));
+  console.log(__dirname);
+
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
