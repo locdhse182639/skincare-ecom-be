@@ -22,7 +22,7 @@ export const createOrder = async (req: Request, res: Response) => {
 
         res.status(201).json({message: "Order created successfully", order: newOrder});
     } catch (err){
-        res.status(500).json({message: "Internal server error", error: err});
+        res.status(500).json({message: "Error creating order", error: err});
     }
 }
 
@@ -42,6 +42,25 @@ export const getOrderById = async (req: Request, res: Response) => {
 
         res.status(200).json({order});
     } catch (err){
-        res.status(500).json({message: "Internal server error", error: err});
+        res.status(500).json({message: "Error retrieving orders", error: err});
+    }
+}
+
+/**
+ * @desc Get all orders for the authenticated user
+ * @route GET /api/orders
+ * @access Private (Authenticated Users)
+ */
+export const getUserOrders = async (req: Request, res: Response) => {
+    try{
+        const orders = await OrderModel.find({user: req.user?.id}).sort({createAt: -1});
+
+        if(!orders.length) {
+            return res.status(404).json({message: "No order found"});
+        }
+
+        res.status(200).json({orders});
+    } catch (err){
+        res.status(500).json({message: "Error retrieving orders", error: err});
     }
 }

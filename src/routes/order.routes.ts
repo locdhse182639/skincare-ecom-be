@@ -1,5 +1,5 @@
 import express from "express";
-import { createOrder, getOrderById } from "../controllers/order.controller";
+import { createOrder, getOrderById, getUserOrders } from "../controllers/order.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
@@ -88,5 +88,23 @@ router.post("/", authMiddleware, createOrder);
  *         description: Order not found
  */
 router.get("/:id", authMiddleware, getOrderById);
+
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get all orders for the authenticated user
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Orders retrieved successfully
+ *       404:
+ *         description: No orders found
+ */
+router.get("/", authMiddleware, getUserOrders);
+
 
 export default router;
