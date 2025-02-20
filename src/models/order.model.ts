@@ -15,12 +15,12 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
     totalAmount: { type: Number, required: true },
-    isPaid: { type: Boolean, default: false }, 
-    paidAt: { type: Date }, 
+    isPaid: { type: Boolean, default: false },
+    paidAt: { type: Date },
     paymentResult: {
       id: { type: String },
-      status: { type: String }, 
-      update_time: { type: String }, 
+      status: { type: String },
+      update_time: { type: String },
       email_address: { type: String },
     },
     paymentStatus: {
@@ -40,6 +40,7 @@ const OrderSchema = new mongoose.Schema(
       province: { type: String, required: true },
       phone: { type: String, required: true },
     },
+    deliveredAt: { type: Date }
   },
   { timestamps: true }
 );

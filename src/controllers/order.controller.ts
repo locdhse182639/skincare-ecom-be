@@ -88,10 +88,10 @@ export const updateOrderToPaid = async (req: Request, res: Response) => {
     order.isPaid = true;
     order.paidAt = new Date();
     order.paymentResult = {
-      id: req.body.id, 
-      status: req.body.status, 
-      update_time: req.body.update_time, 
-      email_address: req.body.email_address, 
+      id: req.body.id,
+      status: req.body.status,
+      update_time: req.body.update_time,
+      email_address: req.body.email_address,
     };
 
     const updatedOrder = await order.save();
@@ -102,3 +102,35 @@ export const updateOrderToPaid = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * @desc Mark order as delivered
+ * @route PUT /api/orders/:id/deliver
+ * @access Private (Admin only)
+ */
+export const updateOrderToDelivered = async (req: Request, res: Response) => {
+  try {
+    const order = await OrderModel.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.orderStatus !== "Shipped" && order.orderStatus !== "Delivered") {
+      return res
+        .status(400)
+        .json({ message: "Order must be shipped before marking as delivered" });
+    } else if (order.orderStatus === "Delivered") {
+      return res.status(400).json({ message: "Order already delivered" });
+    }
+
+    order.orderStatus = "Delivered";
+    order.deliveredAt = new Date();
+
+    const updatedOrder = await order.save();
+    res.status(200).json(updatedOrder);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating order delivery status", error });
+  }
+};

@@ -1,6 +1,6 @@
 import express from "express";
-import { createOrder, getOrderById, getUserOrders, updateOrderToPaid } from "../controllers/order.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { createOrder, getOrderById, getUserOrders, updateOrderToPaid, updateOrderToDelivered } from "../controllers/order.controller";
+import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -148,6 +148,32 @@ router.get("/", authMiddleware, getUserOrders);
  *         description: Order not found
  */
 router.put("/:id/pay", authMiddleware, updateOrderToPaid);
+
+/**
+ * @swagger
+ * /api/orders/{id}/deliver:
+ *   put:
+ *     summary: Mark an order as delivered
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The order ID
+ *     responses:
+ *       200:
+ *         description: Order marked as delivered
+ *       400:
+ *         description: Order must be shipped before marking as delivered
+ *       404:
+ *         description: Order not found
+ */
+router.put("/:id/deliver", authMiddleware, adminMiddleware, updateOrderToDelivered);
 
 
 export default router;
