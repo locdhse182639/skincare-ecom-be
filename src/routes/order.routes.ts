@@ -1,5 +1,5 @@
 import express from "express";
-import { createOrder, getOrderById, getUserOrders } from "../controllers/order.controller";
+import { createOrder, getOrderById, getUserOrders, updateOrderToPaid } from "../controllers/order.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
@@ -105,6 +105,49 @@ router.get("/:id", authMiddleware, getOrderById);
  *         description: No orders found
  */
 router.get("/", authMiddleware, getUserOrders);
+
+/**
+ * @swagger
+ * /api/orders/{id}/pay:
+ *   put:
+ *     summary: Mark an order as paid
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *                 example: "pi_123456789"
+ *               status:
+ *                 type: string
+ *                 example: "COMPLETED"
+ *               update_time:
+ *                 type: string
+ *                 example: "2025-02-21T10:00:00Z"
+ *               email_address:
+ *                 type: string
+ *                 example: "customer@example.com"
+ *     responses:
+ *       200:
+ *         description: Order marked as paid
+ *       404:
+ *         description: Order not found
+ */
+router.put("/:id/pay", authMiddleware, updateOrderToPaid);
 
 
 export default router;
