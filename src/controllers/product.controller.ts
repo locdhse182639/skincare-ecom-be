@@ -18,6 +18,18 @@ export const createProduct = async (req: Request, res: Response) => {
     if (!imageUrl)
       return res.status(400).json({ message: "Image upload failed" });
 
+    const parseArrayField = (field: string | string[]) => {
+      if (Array.isArray(field)) return field; // If already an array, return it as is
+      if (typeof field === "string") {
+        try {
+          return JSON.parse(field); // Try parsing JSON (for frontend requests)
+        } catch {
+          return field.split(",").map((item) => item.trim()); // Fallback: split comma-separated values (for Swagger)
+        }
+      }
+      return [];
+    };
+
     const newProduct = new ProductModel({
       name,
       description,
@@ -25,11 +37,9 @@ export const createProduct = async (req: Request, res: Response) => {
       category,
       price,
       stock,
-      skinType: Array.isArray(skinType) ? skinType : JSON.parse(skinType),
-      ingredients: Array.isArray(ingredients)
-        ? ingredients
-        : JSON.parse(ingredients),
-      images: [imageUrl], // Save uploaded Cloudinary image URL
+      skinType: parseArrayField(skinType),
+      ingredients: parseArrayField(ingredients),
+      images: [imageUrl], 
     });
 
     await newProduct.save();
@@ -37,7 +47,12 @@ export const createProduct = async (req: Request, res: Response) => {
       .status(201)
       .json({ message: "Product created successfully", product: newProduct });
   } catch (err) {
-    res.status(500).json({ message: "Error creating product", error: err });
+    res
+      .status(500)
+      .json({
+        message: "Error creating product",
+        error: (err as Error).message,
+      });
   }
 };
 

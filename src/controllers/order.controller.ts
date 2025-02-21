@@ -17,11 +17,17 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ message: "No item in the order" });
     }
 
+    // Ensure a valid payment method is provided
+    const allowedPaymentMethods = ["Stripe", "VNPay"];
+    if (!allowedPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({ message: "Invalid payment method" });
+    }
+
     const newOrder = new OrderModel({
       user: userId,
       items,
       totalAmount,
-      paymentMethod,
+      paymentMethod, // Keep the user's chosen payment method
       shippingAddress,
     });
 
@@ -35,7 +41,10 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export const getOrderById = async (req: AuthenticatedRequest, res: Response) => {
+export const getOrderById = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const order = await OrderModel.findById(req.params.id)
       .populate("user", "name email")
@@ -46,7 +55,7 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response) => 
     }
 
     //condition chỉ cho coi order của user login hoặc admin
-    if (req.user?.id !== order.user.toString() && req.user?.role !== "admin") {
+    if (req.user?.id !== order.user._id.toString() && req.user?.role !== "admin") {
       return res
         .status(403)
         .json({ message: "You are not authorized to view this order" });
@@ -63,7 +72,10 @@ export const getOrderById = async (req: AuthenticatedRequest, res: Response) => 
  * @route GET /api/orders
  * @access Private (Authenticated Users)
  */
-export const getUserOrders = async (req: AuthenticatedRequest, res: Response) => {
+export const getUserOrders = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const orders = await OrderModel.find({ user: req.user?.id }).sort({
       createdAt: -1,
@@ -80,11 +92,14 @@ export const getUserOrders = async (req: AuthenticatedRequest, res: Response) =>
 };
 
 /**
- * @desc Mark order as paid
+ * @desc Mark order as paid (after successful payment)
  * @route PUT /api/orders/:id/pay
  * @access Private (Authenticated Users)
  */
-export const updateOrderToPaid = async (req: AuthenticatedRequest, res: Response) => {
+export const updateOrderToPaid = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const order = await OrderModel.findById(req.params.id);
 
@@ -92,19 +107,56 @@ export const updateOrderToPaid = async (req: AuthenticatedRequest, res: Response
       return res.status(404).json({ message: "Order not found" });
     }
 
+    if (order.isPaid) {
+      return res.status(400).json({ message: "Order is already paid" });
+    }
+
+    // **Handle Stripe Payments**
+    if (order.paymentMethod === "Stripe") {
+      if (!req.body.paymentIntentId) {
+        return res
+          .status(400)
+          .json({ message: "Missing Stripe payment intent ID" });
+      }
+
+      // Retrieve the Stripe PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.retrieve(
+        req.body.paymentIntentId
+      );
+
+      if (!paymentIntent || paymentIntent.status !== "succeeded") {
+        return res.status(400).json({ message: "Payment not successful" });
+      }
+
+      // Update order details
+      order.paymentStatus = "Paid";
+      order.paymentResult = {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        update_time: new Date().toISOString(),
+        email_address: paymentIntent.receipt_email || "N/A",
+      };
+    }
+
+    // **Handle VNPay Payments**
+    if (order.paymentMethod === "VNPay") {
+      if (!req.body.transactionId) {
+        return res
+          .status(400)
+          .json({ message: "Missing VNPay transaction ID" });
+      }
+      order.paymentStatus = "Paid";
+      order.paymentResult = {
+        id: req.body.transactionId,
+        status: "completed",
+        update_time: new Date().toISOString(),
+      };
+    }
+
     order.isPaid = true;
     order.paidAt = new Date();
-    order.paymentMethod = req.body.paymentMethod;
-    order.paymentStatus = "Paid";
-    order.paymentResult = {
-      id: req.body.id,
-      status: req.body.status,
-      update_time: req.body.update_time,
-      email_address: req.body.email_address,
-    };
 
     const updatedOrder = await order.save();
-
     res.status(200).json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: "Error updating order payment", error });
@@ -126,25 +178,37 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 
     // Validate that orderStatus is one of the allowed values
-    const allowedStatuses = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"];
+    const allowedStatuses = [
+      "Pending",
+      "Processing",
+      "Shipped",
+      "Delivered",
+      "Cancelled",
+    ];
     if (!allowedStatuses.includes(orderStatus)) {
       return res.status(400).json({ message: "Invalid order status" });
     }
 
     // If updating to "Delivered", ensure order was "Shipped" first
     if (orderStatus === "Delivered" && order.orderStatus !== "Shipped") {
-      return res.status(400).json({ message: "Order must be shipped before marking as delivered" });
+      return res
+        .status(400)
+        .json({ message: "Order must be shipped before marking as delivered" });
     }
 
     // If updating to "Cancelled", check if already shipped
     if (orderStatus === "Cancelled" && order.orderStatus === "Shipped") {
-      return res.status(400).json({ message: "Cannot cancel an order that has already been shipped" });
+      return res.status(400).json({
+        message: "Cannot cancel an order that has already been shipped",
+      });
     }
 
     order.orderStatus = orderStatus;
     const updatedOrder = await order.save();
 
-    res.status(200).json({ message: "Order status updated", order: updatedOrder });
+    res
+      .status(200)
+      .json({ message: "Order status updated", order: updatedOrder });
   } catch (error) {
     res.status(500).json({ message: "Error updating order status", error });
   }
@@ -155,7 +219,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
  * @route GET /api/orders/admin/getAll
  * @access Private (Admin only)
  */
-export const getAllOrders = async (req: AuthenticatedRequest, res: Response) => {
+export const getAllOrders = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const { page = 1, limit = 10, status, search } = req.query;
 
@@ -166,7 +233,7 @@ export const getAllOrders = async (req: AuthenticatedRequest, res: Response) => 
 
     // Pagination settings
     const skip = (Number(page) - 1) * Number(limit);
-    
+
     let ordersQuery = OrderModel.find(query)
       .populate({ path: "user", select: "name email" }) // Populate user details
       .sort({ createdAt: -1 });
@@ -214,7 +281,7 @@ export const cancelOrder = async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    if (req.user?.id !== order.user.toString() && req.user?.role !== "admin") {
+    if (req.user?.id !== order.user._id.toString() && req.user?.role !== "admin") {
       return res
         .status(403)
         .json({ message: "You are not authorized to cancel this order" });
@@ -258,7 +325,10 @@ export const cancelOrder = async (req: AuthenticatedRequest, res: Response) => {
  * @route GET /api/orders/admin/analytics
  * @access Private (Admin only)
  */
-export const getOrderAnalytics = async (req: AuthenticatedRequest, res: Response) => {
+export const getOrderAnalytics = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
     const totalOrders = await OrderModel.countDocuments();
 
@@ -297,5 +367,48 @@ export const getOrderAnalytics = async (req: AuthenticatedRequest, res: Response
     res
       .status(500)
       .json({ message: "Error retrieving order analytics", error: err });
+  }
+};
+
+/**
+ * @desc Create a Stripe PaymentIntent for an order
+ * @route POST /api/orders/:id/pay
+ * @access Private (Authenticated Users)
+ */
+export const createPaymentIntent = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const order = await OrderModel.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.isPaid) {
+      return res.status(400).json({ message: "Order is already paid" });
+    }
+
+    // Only create PaymentIntent if payment method is Stripe
+    if (order.paymentMethod !== "Stripe") {
+      return res.status(400).json({
+        message: "PaymentIntent is only required for Stripe payments",
+      });
+    }
+
+    // Create a Stripe PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(order.totalAmount * 100), // Convert to cents
+      currency: "usd",
+      metadata: { orderId: order._id.toString() },
+    });
+
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error: any) {
+    console.error("Stripe Payment Intent Error:", error.message);
+    res
+      .status(500)
+      .json({ message: "Error creating payment intent", error: error.message });
   }
 };

@@ -14,7 +14,7 @@ const ProductSchema = new mongoose.Schema(
     stock: { type: Number, require: true },
     skinType: {
       type: [String],
-      enum: ["oily", "dry", "combination", "sensitive", "all"],
+      enum: ["oily", "dry", "combination", "sensitive", "normal"],
       require: true,
     },
     ingredients: [{ type: String }],

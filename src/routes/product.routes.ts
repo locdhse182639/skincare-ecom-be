@@ -51,16 +51,13 @@ const router = express.Router();
  *                 type: number
  *                 example: 50
  *               skinType:
- *                 type: array
- *                 items:
- *                   type: string
- *                   enum: [oily, dry, combination, sensitive, normal]
- *                 example: ["dry", "sensitive"]
+ *                 type: string
+ *                 description: "Send as a comma-separated list (e.g. 'dry,sensitive')"
+ *                 example: "dry,sensitive"
  *               ingredients:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example: ["Hyaluronic Acid", "Vitamin E"]
+ *                 type: string
+ *                 description: "Send as a comma-separated list (e.g. 'Hyaluronic Acid,Vitamin E')"
+ *                 example: "Hyaluronic Acid,Vitamin E"
  *     responses:
  *       201:
  *         description: Product created successfully
