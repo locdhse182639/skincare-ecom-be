@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ["user", "manager", "staff"], default: "user" },
+    role: { type: String, enum: ["user", "admin", "staff"], default: "user" },
     isVerified: { type: Boolean, default: false },
     emailVerificationToken: { type: String },
     passwordResetToken: { type: String, default: null },
