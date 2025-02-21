@@ -4,7 +4,11 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
-export const createOrder = async (req: Request, res: Response) => {
+interface AuthenticatedRequest extends Request {
+  user?: { id: string; role: string };
+}
+
+export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { items, totalAmount, paymentMethod, shippingAddress } = req.body;
     const userId = req.user?.id;
@@ -31,7 +35,7 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 };
 
-export const getOrderById = async (req: Request, res: Response) => {
+export const getOrderById = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const order = await OrderModel.findById(req.params.id)
       .populate("user", "name email")
@@ -59,7 +63,7 @@ export const getOrderById = async (req: Request, res: Response) => {
  * @route GET /api/orders
  * @access Private (Authenticated Users)
  */
-export const getUserOrders = async (req: Request, res: Response) => {
+export const getUserOrders = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const orders = await OrderModel.find({ user: req.user?.id }).sort({
       createdAt: -1,
@@ -80,7 +84,7 @@ export const getUserOrders = async (req: Request, res: Response) => {
  * @route PUT /api/orders/:id/pay
  * @access Private (Authenticated Users)
  */
-export const updateOrderToPaid = async (req: Request, res: Response) => {
+export const updateOrderToPaid = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const order = await OrderModel.findById(req.params.id);
 
@@ -108,68 +112,78 @@ export const updateOrderToPaid = async (req: Request, res: Response) => {
 };
 
 /**
- * @desc Mark order as delivered
- * @route PUT /api/orders/:id/deliver
+ * @desc Update order status (Admin Only)
+ * @route PUT /api/orders/:id/status
  * @access Private (Admin only)
  */
-export const updateOrderToDelivered = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
+    const { orderStatus } = req.body; // Get new status from request body
     const order = await OrderModel.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    if (order.orderStatus !== "Shipped" && order.orderStatus !== "Delivered") {
-      return res
-        .status(400)
-        .json({ message: "Order must be shipped before marking as delivered" });
-    } else if (order.orderStatus === "Delivered") {
-      return res.status(400).json({ message: "Order already delivered" });
+    // Validate that orderStatus is one of the allowed values
+    const allowedStatuses = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"];
+    if (!allowedStatuses.includes(orderStatus)) {
+      return res.status(400).json({ message: "Invalid order status" });
     }
 
-    order.orderStatus = "Delivered";
-    order.deliveredAt = new Date();
+    // If updating to "Delivered", ensure order was "Shipped" first
+    if (orderStatus === "Delivered" && order.orderStatus !== "Shipped") {
+      return res.status(400).json({ message: "Order must be shipped before marking as delivered" });
+    }
 
+    // If updating to "Cancelled", check if already shipped
+    if (orderStatus === "Cancelled" && order.orderStatus === "Shipped") {
+      return res.status(400).json({ message: "Cannot cancel an order that has already been shipped" });
+    }
+
+    order.orderStatus = orderStatus;
     const updatedOrder = await order.save();
-    res.status(200).json(updatedOrder);
+
+    res.status(200).json({ message: "Order status updated", order: updatedOrder });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error updating order delivery status", error });
+    res.status(500).json({ message: "Error updating order status", error });
   }
 };
 
 /**
  * @desc Get all orders with pagination and filter (Admin only)
- * @route GET /api/orders/admin
+ * @route GET /api/orders/admin/getAll
  * @access Private (Admin only)
  */
-export const getAllOrders = async (req: Request, res: Response) => {
+export const getAllOrders = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { page = 1, limit = 10, status, search } = req.query;
 
     const query: any = {};
 
-    //filter = order status
+    // Filter by order status if provided
     if (status) query.orderStatus = status;
 
-    //search = email
+    // Pagination settings
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    let ordersQuery = OrderModel.find(query)
+      .populate({ path: "user", select: "name email" }) // Populate user details
+      .sort({ createdAt: -1 });
+
+    // Apply search filter after populating user
     if (search) {
-      query.$or = [
-        { "user.email": { $regex: search, $options: "i" } }, //case-insensitive search
-      ];
+      if (typeof search === "string") {
+        ordersQuery = ordersQuery.where("user").populate({
+          path: "user",
+          match: { email: new RegExp(search, "i") }, // Case-insensitive search
+        });
+      }
     }
 
-    //pagination
-    const skip = (Number(page) - 1) * Number(limit);
+    // Get total count for pagination
     const totalOrders = await OrderModel.countDocuments(query);
-
-    const orders = await OrderModel.find(query)
-      .populate("user", "name email")
-      .sort({ createAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+    const orders = await ordersQuery.skip(skip).limit(Number(limit));
 
     res.status(200).json({
       orders,
@@ -186,7 +200,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
  * @route PUT /api/orders/:id/cancel
  * @access Private (User or Admin)
  */
-export const cancelOrder = async (req: Request, res: Response) => {
+export const cancelOrder = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const order = await OrderModel.findById(req.params.id);
 
@@ -200,7 +214,6 @@ export const cancelOrder = async (req: Request, res: Response) => {
       });
     }
 
-    // 🔒 Only allow the owner or an admin to cancel
     if (req.user?.id !== order.user.toString() && req.user?.role !== "admin") {
       return res
         .status(403)
@@ -245,7 +258,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
  * @route GET /api/orders/admin/analytics
  * @access Private (Admin only)
  */
-export const getOrderAnalytics = async (req: Request, res: Response) => {
+export const getOrderAnalytics = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const totalOrders = await OrderModel.countDocuments();
 

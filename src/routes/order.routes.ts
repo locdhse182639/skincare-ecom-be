@@ -4,7 +4,7 @@ import {
   getOrderById,
   getUserOrders,
   updateOrderToPaid,
-  updateOrderToDelivered,
+  updateOrderStatus,
   getAllOrders,
   cancelOrder,
   getOrderAnalytics,
@@ -160,9 +160,9 @@ router.put("/:id/pay", authMiddleware, updateOrderToPaid);
 
 /**
  * @swagger
- * /api/orders/{id}/deliver:
+ * /api/orders/{id}/status:
  *   put:
- *     summary: Mark an order as delivered
+ *     summary: Update order status (Admin Only)
  *     tags:
  *       - Orders
  *     security:
@@ -174,59 +174,27 @@ router.put("/:id/pay", authMiddleware, updateOrderToPaid);
  *         schema:
  *           type: string
  *         description: The order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               orderStatus:
+ *                 type: string
+ *                 example: "Processing"
  *     responses:
  *       200:
- *         description: Order marked as delivered
+ *         description: Order status updated successfully
  *       400:
- *         description: Order must be shipped before marking as delivered
+ *         description: Invalid status update
  *       404:
  *         description: Order not found
  */
-router.put(
-  "/:id/deliver",
-  authMiddleware,
-  adminMiddleware,
-  updateOrderToDelivered
-);
+router.put("/:id/status", authMiddleware, adminMiddleware, updateOrderStatus);
 
-/**
- * @swagger
- * /api/orders/admin:
- *   get:
- *     summary: Get all orders with filtering & pagination (Admin only)
- *     tags:
- *       - Orders
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *         description: Page number for pagination (default: 1)
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *         description: Number of items per page (default: 10)
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *           enum: [Pending, Processing, Shipped, Delivered]
- *         description: Filter orders by status
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search by user email
- *     responses:
- *       200:
- *         description: Orders retrieved successfully
- *       403:
- *         description: Access denied (Admin only)
- */
-router.get("/admin", authMiddleware, adminMiddleware, getAllOrders);
+
 
 /**
  * @swagger
@@ -277,5 +245,44 @@ router.get(
   adminMiddleware,
   getOrderAnalytics
 );
+
+/**
+ * @swagger
+ * /api/orders/admin/getAll:
+ *   get:
+ *     summary: Get all orders with filtering & pagination (Admin only)
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number for pagination 
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of items per page 
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [Pending, Processing, Shipped, Delivered]
+ *         description: Filter orders by status
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search by user email
+ *     responses:
+ *       200:
+ *         description: Orders retrieved successfully
+ *       403:
+ *         description: Access denied (Admin only)
+ */
+router.get("/admin/getAll", authMiddleware, adminMiddleware, getAllOrders);
 
 export default router;
