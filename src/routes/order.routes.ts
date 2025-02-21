@@ -8,6 +8,7 @@ import {
   getAllOrders,
   cancelOrder,
   getOrderAnalytics,
+  createPaymentIntent,
 } from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
@@ -48,7 +49,7 @@ const router = express.Router();
  *                 example: 59.98
  *               paymentMethod:
  *                 type: string
- *                 enum: ["Stripe", "PayPal", "VNPay"]
+ *                 enum: ["Stripe", "VNPay"]
  *                 example: "Stripe"
  *               shippingAddress:
  *                 type: object
@@ -118,8 +119,32 @@ router.get("/", authMiddleware, getUserOrders);
 /**
  * @swagger
  * /api/orders/{id}/pay:
+ *   post:
+ *     summary: Create a Stripe PaymentIntent for an order
+ *     tags:
+ *       - Orders
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The order ID
+ *     responses:
+ *       200:
+ *         description: PaymentIntent created, returns clientSecret
+ *       404:
+ *         description: Order not found
+ */
+router.post("/:id/pay", authMiddleware, createPaymentIntent);
+
+/**
+ * @swagger
+ * /api/orders/{id}/pay:
  *   put:
- *     summary: Mark an order as paid
+ *     summary: Mark an order as paid after Stripe payment
  *     tags:
  *       - Orders
  *     security:
@@ -138,18 +163,9 @@ router.get("/", authMiddleware, getUserOrders);
  *           schema:
  *             type: object
  *             properties:
- *               id:
+ *               paymentIntentId:
  *                 type: string
  *                 example: "pi_123456789"
- *               status:
- *                 type: string
- *                 example: "COMPLETED"
- *               update_time:
- *                 type: string
- *                 example: "2025-02-21T10:00:00Z"
- *               email_address:
- *                 type: string
- *                 example: "customer@example.com"
  *     responses:
  *       200:
  *         description: Order marked as paid
@@ -193,8 +209,6 @@ router.put("/:id/pay", authMiddleware, updateOrderToPaid);
  *         description: Order not found
  */
 router.put("/:id/status", authMiddleware, adminMiddleware, updateOrderStatus);
-
-
 
 /**
  * @swagger
@@ -260,12 +274,12 @@ router.get(
  *         name: page
  *         schema:
  *           type: integer
- *         description: Page number for pagination 
+ *         description: Page number for pagination
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *         description: Number of items per page 
+ *         description: Number of items per page
  *       - in: query
  *         name: status
  *         schema:
