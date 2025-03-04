@@ -113,6 +113,7 @@ export const loginUser = async (req: Request, res: Response) => {
   res.json({
     message: "Login successful",
     accessToken,
+    refreshToken,
     user: {
       id: user._id,
       name: user.name,
@@ -125,13 +126,13 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 export const logoutUser = (req: Request, res: Response) => {
-  res.clearCookie("refreshToken");
   res.json({ message: "Logged out successfully" });
 };
 
 export const refreshAccessToken = (req: Request, res: Response) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    const { refreshToken } = req.body;
+
     if (!refreshToken) {
       return res.status(403).json({ message: "Refresh token missing" });
     }
