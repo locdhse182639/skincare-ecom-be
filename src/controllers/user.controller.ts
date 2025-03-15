@@ -69,7 +69,7 @@ export const getAllUser = async (req: AuthenticatedRequest, res: Response) => {
 
     if (requestingUser.role === "user") {
       filter.role = "user";
-    } else if (requestingUser.role === "manager") {
+    } else if (requestingUser.role === "admin") {
       filter.role = { $in: ["user", "staff"] };
     } else if (requestingUser.role === "staff") {
       filter.role = "user";
