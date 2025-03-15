@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { UserModel } from "../models/user.model";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 
@@ -8,7 +9,7 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
 }
 
-export const authMiddleware = (
+export const authMiddleware = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
@@ -20,12 +21,23 @@ export const authMiddleware = (
 
   const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ message: "Forbidden" });
+  try {
+    const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as { id: string; role: string };
+    const user = await UserModel.findById(decoded.id);
 
-    req.user = decoded as { id: string; role: string }; // ✅ Attach user info
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isBanned) {
+      return res.status(403).json({ message: "User is banned" });
+    }
+
+    req.user = { id: user._id.toString(), role: user.role }; // Attach user info
     next();
-  });
+  } catch (err) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
 };
 
 export const adminMiddleware = (
