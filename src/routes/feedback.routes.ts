@@ -16,7 +16,7 @@ const router = express.Router();
  *     summary: Create a new feedback
  *     tags: [Feedback]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -66,7 +66,7 @@ router.post("/", authMiddleware, createFeedback);
  *     summary: Update a feedback
  *     tags: [Feedback]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -118,7 +118,7 @@ router.put("/:id", authMiddleware, updateFeedback);
  *     summary: Delete a feedback (soft delete)
  *     tags: [Feedback]
  *     security:
- *       - bearerAuth: []
+ *       - BearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -214,10 +214,10 @@ router.get("/product/:productId", getFeedbacksByProduct);
  *           type: string
  *           format: date-time
  *   securitySchemes:
- *     bearerAuth:
+ *     BearerAuth:
  *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
+ *       scheme: Bearer
+ *       BearerFormat: JWT
  */
 
 export default router; 

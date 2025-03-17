@@ -5,8 +5,10 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
+  adminGetProducts,
+  reactivateProduct,
 } from "../controllers/product.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 import { upload } from "../config/cloudinary";
 
 const router = express.Router();
@@ -62,7 +64,13 @@ const router = express.Router();
  *       201:
  *         description: Product created successfully
  */
-router.post("/", authMiddleware, upload.single("image"), createProduct);
+router.post(
+  "/",
+  authMiddleware,
+  adminMiddleware,
+  upload.single("image"),
+  createProduct
+);
 
 /**
  * @swagger
@@ -120,6 +128,68 @@ router.get("/", getProducts);
 
 /**
  * @swagger
+ * /api/products/test:
+ *   get:
+ *     tags:
+ *       - Products
+ *     summary: Get all products for admin with pagination, filtering, and search
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of products per page
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: Search for products by name, description
+ *       - in: query
+ *         name: brandName
+ *         schema:
+ *           type: string
+ *         description: Filter by brand name
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category (Cleanser, Moisturizer, Serum, Sunscreen, Toner, Mask)
+ *       - in: query
+ *         name: skinType
+ *         schema:
+ *           type: string
+ *         description: Filter by skin type (oily, dry, combination, sensitive, all)
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price filter
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price filter
+ *       - in: query
+ *         name: includeDeleted
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *         description: Include deleted products in the results
+ *     responses:
+ *       200:
+ *         description: A list of filtered and paginated products for admin
+ */
+router.get("/admin",authMiddleware, adminMiddleware, adminGetProducts);
+
+/**
+ * @swagger
  * /api/products/{id}:
  *   get:
  *     summary: Get a product by ID
@@ -171,7 +241,7 @@ router.get("/:id", getProductById);
  *       200:
  *         description: Product updated successfully
  */
-router.put("/:id", authMiddleware, updateProduct);
+router.put("/:id", authMiddleware, adminMiddleware, updateProduct);
 
 /**
  * @swagger
@@ -196,6 +266,35 @@ router.put("/:id", authMiddleware, updateProduct);
  *       400:
  *         description: Product already deleted
  */
-router.delete("/:id", authMiddleware, deleteProduct);
+router.delete("/:id", authMiddleware, adminMiddleware, deleteProduct);
+
+/**
+ * @swagger
+ * /api/products/{id}/reactivate:
+ *   put:
+ *     summary: Reactivate a soft-deleted product
+ *     tags:
+ *       - Products
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "603e2f84a357dc002f6e1bff"
+ *     responses:
+ *       200:
+ *         description: Product reactivated successfully
+ *       404:
+ *         description: Product not found
+ */
+router.put(
+  "/:id/reactivate",
+  authMiddleware,
+  adminMiddleware,
+  reactivateProduct
+);
 
 export default router;
