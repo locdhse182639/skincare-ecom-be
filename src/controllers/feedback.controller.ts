@@ -2,8 +2,12 @@ import { Request, Response } from "express";
 import { FeedbackModel } from "../models/feedback.model";
 import { ProductModel } from "../models/product.model";
 
+interface AuthenticatedRequest extends Request {
+    user?: { id: string; role: string };
+  }
+
 // Create new feedback
-export const createFeedback = async (req: Request, res: Response) => {
+export const createFeedback = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { productId, rating, comment } = req.body;
     
@@ -54,7 +58,7 @@ export const createFeedback = async (req: Request, res: Response) => {
 };
 
 // Update feedback
-export const updateFeedback = async (req: Request, res: Response) => {
+export const updateFeedback = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { rating, comment } = req.body;
@@ -109,7 +113,7 @@ export const updateFeedback = async (req: Request, res: Response) => {
 };
 
 // Delete feedback (soft delete)
-export const deleteFeedback = async (req: Request, res: Response) => {
+export const deleteFeedback = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     
