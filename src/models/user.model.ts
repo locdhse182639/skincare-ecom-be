@@ -25,6 +25,7 @@ const UserSchema = new mongoose.Schema(
       enum: ["oily", "dry", "combination", "sensitive", "normal"],
       default: "normal",
     },
+    quizResults: [{ type: mongoose.Schema.Types.ObjectId, ref: "QuizResult" }],
     address: { type: AddressSchema, default: null },
   },
   { timestamps: true }
