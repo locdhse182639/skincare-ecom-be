@@ -4,7 +4,11 @@ const ProductSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
     description: { type: String, required: true },
-    brand: { type: String, required: true },
+    brand: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+      required: true,
+    },
     category: {
       type: String,
       enum: ["Cleanser", "Moisturizer", "Serum", "Sunscreen", "Toner", "Mask"],
