@@ -154,6 +154,19 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (!product || product.isDeleted)
       return res.status(404).json({ message: "Product not found" });
 
+    const { brand } = req.body;
+
+    // Check if the brand exists and is not deleted
+    if (brand) {
+      const brandExists = await BrandModel.findOne({
+        _id: brand,
+        isDeleted: false,
+      });
+      if (!brandExists) {
+        return res.status(400).json({ message: "Invalid or deleted brand" });
+      }
+    }
+
     Object.assign(product, req.body);
     await product.save();
 
@@ -181,5 +194,94 @@ export const deleteProduct = async (req: Request, res: Response) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Error deleting product", error: err });
+  }
+};
+
+export const reactivateProduct = async (req: Request, res: Response) => {
+  try {
+    const product = await ProductModel.findById(req.params.id);
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    if (!product.isDeleted)
+      return res.status(400).json({ message: "Product is not deleted" });
+
+    product.isDeleted = false;
+    await product.save();
+
+    res.json({
+      message: "Product reactivated successfully",
+      product,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error reactivating product", error: err });
+  }
+};
+
+export const adminGetProducts = async (req: Request, res: Response) => {
+  try {
+    let {
+      page = "1",
+      limit = "10",
+      keyword,
+      category,
+      skinType,
+      minPrice,
+      maxPrice,
+      brandName,
+    } = req.query;
+
+    const pageNumber = parseInt(page as string, 10) || 1;
+    const limitNumber = parseInt(limit as string, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    let filter: any = { };
+
+    if (keyword) {
+      filter.$or = [
+        { name: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    if (category) {
+      filter.category = category;
+    }
+
+    if (skinType) {
+      filter.skinType = { $in: skinType };
+    }
+
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = parseFloat(minPrice as string);
+      if (maxPrice) filter.price.$lte = parseFloat(maxPrice as string);
+    }
+
+    if (brandName) {
+      const brands = await BrandModel.find({
+        brandName: { $regex: brandName, $options: "i" },
+        isDeleted: false,
+      }).select("_id");
+
+      filter.brand = { $in: brands.map((brand) => brand._id) };
+    }
+
+    const products = await ProductModel.find(filter)
+      .populate("brand")
+      .skip(skip)
+      .limit(limitNumber);
+
+    const totalProducts = await ProductModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalProducts / limitNumber);
+
+    res.json({
+      products,
+      totalProducts,
+      totalPages,
+      currentPage: pageNumber,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching products", error: err });
   }
 };
