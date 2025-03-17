@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ProductModel } from "../models/product.model";
+import { BrandModel } from "../models/brand.model";
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
@@ -30,6 +31,14 @@ export const createProduct = async (req: Request, res: Response) => {
       return [];
     };
 
+    const brandExists = await BrandModel.findOne({
+      _id: brand,
+      isDeleted: false,
+    });
+    if (!brandExists) {
+      return res.status(400).json({ message: "Invalid or deleted brand" });
+    }
+
     const newProduct = new ProductModel({
       name,
       description,
@@ -39,7 +48,7 @@ export const createProduct = async (req: Request, res: Response) => {
       stock,
       skinType: parseArrayField(skinType),
       ingredients: parseArrayField(ingredients),
-      images: [imageUrl], 
+      images: [imageUrl],
     });
 
     await newProduct.save();
@@ -47,12 +56,10 @@ export const createProduct = async (req: Request, res: Response) => {
       .status(201)
       .json({ message: "Product created successfully", product: newProduct });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        message: "Error creating product",
-        error: (err as Error).message,
-      });
+    res.status(500).json({
+      message: "Error creating product",
+      error: (err as Error).message,
+    });
   }
 };
 
@@ -66,6 +73,7 @@ export const getProducts = async (req: Request, res: Response) => {
       skinType,
       minPrice,
       maxPrice,
+      brandName,
     } = req.query;
 
     const pageNumber = parseInt(page as string, 10) || 1;
@@ -78,7 +86,6 @@ export const getProducts = async (req: Request, res: Response) => {
       filter.$or = [
         { name: { $regex: keyword, $options: "i" } },
         { description: { $regex: keyword, $options: "i" } },
-        { brand: { $regex: keyword, $options: "i" } },
       ];
     }
 
@@ -96,7 +103,17 @@ export const getProducts = async (req: Request, res: Response) => {
       if (maxPrice) filter.price.$lte = parseFloat(maxPrice as string);
     }
 
+    if (brandName) {
+      const brands = await BrandModel.find({
+        brandName: { $regex: brandName, $options: "i" },
+        isDeleted: false,
+      }).select("_id");
+
+      filter.brand = { $in: brands.map((brand) => brand._id) };
+    }
+
     const products = await ProductModel.find(filter)
+      .populate("brand")
       .skip(skip)
       .limit(limitNumber);
 
@@ -119,9 +136,10 @@ export const getProductById = async (req: Request, res: Response) => {
     const product = await ProductModel.findOne({
       _id: req.params.id,
       isDeleted: false,
-    });
+    }).populate("brand");
 
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product || product.isDeleted)
+      return res.status(404).json({ message: "Product not found" });
 
     res.json(product);
   } catch (err) {
