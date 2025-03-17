@@ -5,7 +5,7 @@ import { UserModel } from "../models/user.model";
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 
 // Define a custom interface to extend Request
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: { id: string; role: string };
 }
 
