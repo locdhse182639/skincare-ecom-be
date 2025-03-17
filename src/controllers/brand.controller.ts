@@ -77,4 +77,44 @@ export const reactivateBrand = async (req: Request, res: Response) => {
   }
 };
 
+export const adminGetBrands = async (req: Request, res: Response) => {
+  try {
+    let {
+      page = "1",
+      limit = "10",
+      keyword,
+      includeDeleted = "false",
+    } = req.query;
+
+    const pageNumber = parseInt(page as string, 10) || 1;
+    const limitNumber = parseInt(limit as string, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    let filter: any = {};
+
+    if (keyword) {
+      filter.brandName = { $regex: keyword, $options: "i" };
+    }
+
+    if (includeDeleted === "false") {
+      filter.isDeleted = false;
+    }
+
+    const brands = await BrandModel.find(filter)
+      .skip(skip)
+      .limit(limitNumber);
+
+    const totalBrands = await BrandModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalBrands / limitNumber);
+
+    res.json({
+      brands,
+      totalBrands,
+      totalPages,
+      currentPage: pageNumber,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching brands", error: err });
+  }
+};
 

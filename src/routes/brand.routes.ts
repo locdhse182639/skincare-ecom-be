@@ -1,5 +1,5 @@
 import express from "express";
-import { createBrand, getAllBrands, updateBrand, deleteBrand, reactivateBrand } from "../controllers/brand.controller";
+import { createBrand, getAllBrands, updateBrand, deleteBrand, reactivateBrand, adminGetBrands } from "../controllers/brand.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
@@ -124,5 +124,43 @@ router.delete("/:id", authMiddleware, adminMiddleware, deleteBrand);
  *         description: Brand not found
  */
 router.put("/:id/reactivate", authMiddleware, adminMiddleware, reactivateBrand);
+
+/**
+ * @swagger
+ * /api/brands/admin:
+ *   get:
+ *     tags:
+ *       - Brands
+ *     summary: Get all brands for admin with pagination, filtering, and search
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of brands per page
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: Search for brands by name
+ *       - in: query
+ *         name: includeDeleted
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *         description: Include deleted brands in the results
+ *     responses:
+ *       200:
+ *         description: A list of filtered and paginated brands for admin
+ */
+router.get("/admin", authMiddleware, adminMiddleware, adminGetBrands);
+
 
 export default router;
