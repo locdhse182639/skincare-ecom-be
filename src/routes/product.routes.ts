@@ -86,7 +86,12 @@ router.post("/", authMiddleware, upload.single("image"), createProduct);
  *         name: keyword
  *         schema:
  *           type: string
- *         description: Search for products by name, description, or brand
+ *         description: Search for products by name, description
+ *       - in: query
+ *         name: brandName
+ *         schema:
+ *           type: string
+ *         description: Filter by brand name
  *       - in: query
  *         name: category
  *         schema:
