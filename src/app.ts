@@ -22,7 +22,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/brands", brandRoutes);
-app.use("/api/feedbacks", feedbackRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 app.get("/", (req, res) => {
   res.send("Skincare E-Commerce Backend is Running!");
