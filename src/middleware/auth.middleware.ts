@@ -50,3 +50,14 @@ export const adminMiddleware = (
   }
   next();
 };
+
+export const admiAndstaffMiddleware = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if(!req.user || (req.user.role !== "admin" && req.user.role !=="staff")){
+    return res.status(403).json({ message: "Access denied. Only Admin or Staff can perform this action." });
+}
+next();
+};
