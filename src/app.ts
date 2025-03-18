@@ -11,6 +11,7 @@ import brandRoutes from "./routes/brand.routes";
 import feedbackRoutes from "./routes/feedback.routes";
 import quizRoutes from "./routes/quiz.routes";
 import feedbackManagementRoutes from "./routes/feedback.management.routes";
+import blogRoutes from "./routes/blog.routes";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/brands", brandRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/admin/feedbacks", feedbackManagementRoutes);
+app.use("/api/blogs", blogRoutes);
 app.get("/", (req, res) => {
   res.send("Skincare E-Commerce Backend is Running!");
 });

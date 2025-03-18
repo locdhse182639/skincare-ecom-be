@@ -4,7 +4,7 @@ import { ProductModel } from "../models/product.model";
 //get
 export const getAllFeedbacks = async (req: Request, res: Response) => {
     try{
-       const feedbacks = await FeedbackModel.find()
+       const feedbacks = await FeedbackModel.find({isDeleted: false})
        .populate("userId", "name email")
        .populate("productId","name")
        .sort({createdAt: -1});
