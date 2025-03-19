@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { QuestionModel } from "../models/question.model";
 import { AnswerModel } from "../models/answer.model";
 import { AuthenticatedRequest } from "../middleware/auth.middleware";
-import { body } from "express-validator";
+// import { body } from "express-validator";
 
 
 export const askQuestion = async (req: AuthenticatedRequest, res: Response) => {
