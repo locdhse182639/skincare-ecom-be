@@ -14,6 +14,7 @@ import feedbackManagementRoutes from "./routes/feedback.management.routes";
 import blogRoutes from "./routes/blog.routes";
 import questionRoutes from "./routes/question.routes";
 import answerRoutes from "./routes/answer.routes";
+import deliveryRoutes from "./routes/delivery.routes";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/admin/feedbacks", feedbackManagementRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/answers", answerRoutes);
+app.use("/api/deliveries", deliveryRoutes);
 
 app.get("/", (req, res) => {
   res.send("Skincare E-Commerce Backend is Running!");
