@@ -7,6 +7,7 @@ import {
   updateUser,
   banUser,
   unbanUser,
+  addPoints,
 } from "../controllers/user.controller";
 import { adminMiddleware, authMiddleware } from "../middleware/auth.middleware"; // Ensure routes are protected
 
@@ -261,5 +262,36 @@ router.put("/ban/:id", authMiddleware, adminMiddleware, banUser);
  *         description: User not found
  */
 router.put("/unban/:id", authMiddleware, adminMiddleware, unbanUser);
+
+/**
+ * @swagger
+ * /api/users/add-points:
+ *   post:
+ *     summary: Add points to a user (Admin only, for testing)
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 example: "641e2f8b9d1e4a0012345678"
+ *               points:
+ *                 type: number
+ *                 example: 100
+ *     responses:
+ *       200:
+ *         description: Points added successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: User not found
+ */
+router.post("/add-points", authMiddleware, adminMiddleware, addPoints);
 
 export default router;

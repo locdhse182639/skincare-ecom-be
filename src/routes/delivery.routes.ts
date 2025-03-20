@@ -67,9 +67,8 @@ router.put(
  * @swagger
  * /api/deliveries/{orderId}/confirm:
  *   put:
- *     summary: Confirm receipt of an order
- *     tags:
- *       - Deliveries
+ *     summary: Confirm receipt of an order and add points to the user
+ *     tags: [Deliveries]
  *     security:
  *       - BearerAuth: []
  *     parameters:
@@ -81,9 +80,30 @@ router.put(
  *         description: Order ID
  *     responses:
  *       200:
- *         description: Order confirmed as received
+ *         description: Order confirmed as received and points added
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Order confirmed as received"
+ *                 delivery:
+ *                   type: object
+ *                   description: Delivery details
+ *                 pointsAdded:
+ *                   type: number
+ *                   example: 10
+ *                 totalPoints:
+ *                   type: number
+ *                   example: 100
+ *       403:
+ *         description: Unauthorized user
  *       404:
  *         description: Order not found
+ *       500:
+ *         description: Error confirming order receipt
  */
 router.put("/:orderId/confirm", authMiddleware, confirmOrderReceived);
 /**

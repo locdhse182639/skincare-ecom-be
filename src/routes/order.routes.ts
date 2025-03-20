@@ -9,6 +9,7 @@ import {
   cancelOrder,
   getOrderAnalytics,
   createPaymentIntent,
+  validateCoupon
 } from "../controllers/order.controller";
 import { authMiddleware, adminMiddleware } from "../middleware/auth.middleware";
 
@@ -44,9 +45,6 @@ const router = express.Router();
  *                     price:
  *                       type: number
  *                       example: 29.99
- *               totalAmount:
- *                 type: number
- *                 example: 59.98
  *               paymentMethod:
  *                 type: string
  *                 enum: ["Stripe", "VNPay"]
@@ -63,15 +61,87 @@ const router = express.Router();
  *                   city:
  *                     type: string
  *                     example: "New York"
+ *                   district:
+ *                     type: string
+ *                     example: "Manhattan"
  *                   province:
  *                     type: string
  *                     example: "NY"
  *                   phone:
  *                     type: string
  *                     example: "+1234567890"
+ *               couponCode:
+ *                 type: string
+ *                 example: "A1B2C3D4E5"
  *     responses:
  *       201:
  *         description: Order created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Order created successfully"
+ *                 order:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: "641e2f8b9d1e4a0012345678"
+ *                     user:
+ *                       type: string
+ *                       example: "641e2f8b9d1e4a0012345678"
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           product:
+ *                             type: string
+ *                             example: "603e2f84a357dc002f6e1bff"
+ *                           price:
+ *                             type: number
+ *                             example: 29.99
+ *                           quantity:
+ *                             type: number
+ *                             example: 2
+ *                     totalAmount:
+ *                       type: number
+ *                       example: 59.98
+ *                     paymentMethod:
+ *                       type: string
+ *                       example: "Stripe"
+ *                     shippingAddress:
+ *                       type: object
+ *                       properties:
+ *                         fullName:
+ *                           type: string
+ *                           example: "John Doe"
+ *                         street:
+ *                           type: string
+ *                           example: "123 Main St"
+ *                         city:
+ *                           type: string
+ *                           example: "New York"
+ *                         district:
+ *                           type: string
+ *                           example: "Manhattan"
+ *                         province:
+ *                           type: string
+ *                           example: "NY"
+ *                         phone:
+ *                           type: string
+ *                           example: "+1234567890"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-03-20T12:00:00.000Z"
+ *       400:
+ *         description: Invalid input or coupon
+ *       500:
+ *         description: Error creating order
  */
 router.post("/", authMiddleware, createOrder);
 
@@ -298,5 +368,50 @@ router.get(
  *         description: Access denied (Admin only)
  */
 router.get("/admin/getAll", authMiddleware, adminMiddleware, getAllOrders);
+
+/**
+ * @swagger
+ * /api/orders/validate-coupon:
+ *   post:
+ *     summary: Validate a coupon and calculate the discount
+ *     tags: [Orders]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               couponCode:
+ *                 type: string
+ *                 example: "A1B2C3D4E5"
+ *               totalAmount:
+ *                 type: number
+ *                 example: 100000
+ *     responses:
+ *       200:
+ *         description: Coupon validated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Coupon validated successfully"
+ *                 discountAmount:
+ *                   type: number
+ *                   example: 10000
+ *                 discountedTotal:
+ *                   type: number
+ *                   example: 90000
+ *       400:
+ *         description: Invalid or expired coupon
+ *       500:
+ *         description: Error validating coupon
+ */
+router.post("/apply-coupon", authMiddleware, validateCoupon);
 
 export default router;
