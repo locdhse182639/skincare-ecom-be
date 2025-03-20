@@ -38,3 +38,21 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+export const sendNotification = async (to: string, subject: string, message: string) => {
+  try {
+    await transporter.sendMail({
+      from: `"Skincare Store" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html: `<p>${message}</p>`,
+    });
+  } catch (err) {
+    console.error("Error sending notification:", err);
+    throw new Error("Failed to send notification");
+  }
+};
+
+
+
+
