@@ -27,6 +27,13 @@ const UserSchema = new mongoose.Schema(
     },
     quizResults: [{ type: mongoose.Schema.Types.ObjectId, ref: "QuizResult" }],
     address: { type: AddressSchema, default: null },
+    points: { type: Number, default: 0 }, // Track user points
+    coupons: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Coupon", // Reference to the Coupon model
+      },
+    ],
   },
   { timestamps: true }
 );
