@@ -184,3 +184,27 @@ export const unbanUser = async (req: Request, res: Response) => {
   }
 };
 
+export const addPoints = async (req: Request, res: Response) => {
+  try {
+    const { userId, points } = req.body;
+
+    // Validate input
+    if (!userId || !points) {
+      return res.status(400).json({ message: "User ID and points are required" });
+    }
+    if (points <= 0) {
+      return res.status(400).json({ message: "Points must be a positive number" });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.points += points;
+    await user.save();
+
+    res.status(200).json({ message: "Points added successfully", user });
+  } catch (err) {
+    res.status(500).json({ message: "Error adding points", error: err });
+  }
+};
+
