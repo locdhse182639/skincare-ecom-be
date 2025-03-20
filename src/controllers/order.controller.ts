@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { OrderModel } from "../models/order.model";
+import { CouponModel } from "../models/coupon.model";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
@@ -10,11 +11,39 @@ interface AuthenticatedRequest extends Request {
 
 export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { items, totalAmount, paymentMethod, shippingAddress } = req.body;
+    const { items, paymentMethod, shippingAddress, couponCode } = req.body;
     const userId = req.user?.id;
 
     if (!items || items.length === 0) {
-      return res.status(400).json({ message: "No item in the order" });
+      return res.status(400).json({ message: "No items in the order" });
+    }
+
+    // Calculate total price
+    const totalAmount = items.reduce((sum: number, item: any) => {
+      return sum + item.price * item.quantity;
+    }, 0);
+
+    let finalTotalAmount = totalAmount;
+
+    // Validate and apply coupon if provided
+    if (couponCode) {
+      const coupon = await CouponModel.findOne({ code: couponCode, isUsed: false });
+      if (!coupon) {
+        return res.status(400).json({ message: "Invalid or already used coupon" });
+      }
+
+      if (coupon.expiresAt < new Date()) {
+        return res.status(400).json({ message: "Coupon has expired" });
+      }
+
+      // Calculate the discount
+      const discountAmount = Math.floor((totalAmount * coupon.discount) / 100);
+      finalTotalAmount -= discountAmount;
+      if (finalTotalAmount < 0) finalTotalAmount = 0;
+
+      // Mark the coupon as used
+      coupon.isUsed = true;
+      await coupon.save();
     }
 
     // Ensure a valid payment method is provided
@@ -26,16 +55,14 @@ export const createOrder = async (req: AuthenticatedRequest, res: Response) => {
     const newOrder = new OrderModel({
       user: userId,
       items,
-      totalAmount,
-      paymentMethod, // Keep the user's chosen payment method
+      totalAmount: finalTotalAmount,
+      paymentMethod,
       shippingAddress,
     });
 
     await newOrder.save();
 
-    res
-      .status(201)
-      .json({ message: "Order created successfully", order: newOrder });
+    res.status(201).json({ message: "Order created successfully", order: newOrder });
   } catch (err) {
     res.status(500).json({ message: "Error creating order", error: err });
   }
@@ -399,8 +426,8 @@ export const createPaymentIntent = async (
 
     // Create a Stripe PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(order.totalAmount * 100), // Convert to cents
-      currency: "usd",
+      amount: order.totalAmount, // No need to multiply by 100 for VND
+      currency: "vnd", // Change currency to VND
       metadata: { orderId: order._id.toString() },
     });
 
@@ -410,5 +437,37 @@ export const createPaymentIntent = async (
     res
       .status(500)
       .json({ message: "Error creating payment intent", error: error.message });
+  }
+};
+
+export const validateCoupon = async (req: Request, res: Response) => {
+  try {
+    const { couponCode, totalAmount } = req.body;
+
+    // Validate input
+    if (!couponCode || !totalAmount) {
+      return res.status(400).json({ message: "Coupon code and total amount are required" });
+    }
+
+    const coupon = await CouponModel.findOne({ code: couponCode, isUsed: false });
+    if (!coupon) {
+      return res.status(400).json({ message: "Invalid or already used coupon" });
+    }
+
+    if (coupon.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Coupon has expired" });
+    }
+
+    // Calculate the discount as a percentage of the total amount
+    const discountAmount = Math.floor((totalAmount * coupon.discount) / 100);
+    const discountedTotal = totalAmount - discountAmount;
+
+    res.status(200).json({
+      message: "Coupon validated successfully",
+      discountAmount,
+      discountedTotal: discountedTotal > 0 ? discountedTotal : 0,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error validating coupon", error: err });
   }
 };

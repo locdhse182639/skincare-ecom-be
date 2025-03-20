@@ -65,23 +65,39 @@ export const confirmOrderReceived = async (req: AuthenticatedRequest, res: Respo
     const userId = req.user?.id; // Assuming `authMiddleware` adds `user` to the request object
 
     // Find the order and check ownership
-    const order = await OrderModel.findById(orderId);
+    const order = await OrderModel.findById(orderId).populate<{ user: { _id: string; points: number; save: () => Promise<void> } }>("user");
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    if (order.user.toString() !== userId) {
+    if (order.user._id.toString() !== userId) {
       return res.status(403).json({ message: "You are not authorized to confirm this order" });
     }
 
+    // Update delivery status to "Delivered"
     const delivery = await updateDeliveryStatus(orderId, "Delivered");
 
+    // Update order status to "Delivered"
     order.orderStatus = "Delivered";
     order.deliveredAt = new Date();
     await order.save();
 
-    res.json({ message: "Order confirmed as received", delivery });
+    // Add points to the user based on the total price of the order
+    const pointsConversionRate = 10000; // 1 point for every 10,000 VND
+    const pointsToAdd = Math.floor(order.totalAmount / pointsConversionRate);
+
+    const user = order.user;
+    user.points += pointsToAdd;
+    await user.save();
+
+    res.json({
+      message: "Order confirmed as received",
+      delivery,
+      pointsAdded: pointsToAdd,
+      totalPoints: user.points,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Error confirming order receipt", error: err });
+    const errorMessage = err instanceof Error ? err.message : err;
+    res.status(500).json({ message: "Error confirming order receipt", error: errorMessage });
   }
 };
