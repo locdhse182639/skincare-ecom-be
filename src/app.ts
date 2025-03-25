@@ -16,6 +16,8 @@ import questionRoutes from "./routes/question.routes";
 import answerRoutes from "./routes/answer.routes";
 import deliveryRoutes from "./routes/delivery.routes";
 import couponRoutes from "./routes/coupon.routes";
+import faqRoutes from "./routes/FAQ.routes";
+
 
 const app = express();
 
@@ -37,7 +39,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/answers", answerRoutes);
 app.use("/api/deliveries", deliveryRoutes);
 app.use("/api/coupons", couponRoutes); 
-
+app.use("/api/faqs", faqRoutes);
 app.get("/", (req, res) => {
   res.send("Skincare E-Commerce Backend is Running!");
 });
