@@ -108,9 +108,9 @@ router.put(
 router.put("/:orderId/confirm", authMiddleware, confirmOrderReceived);
 /**
  * @swagger
- * /api/deliveries/{orderId}/confirm:
+ * /api/deliveries/{orderId}/mark-shipped:
  *   put:
- *     summary: Confirm receipt of an order
+ *     summary: Mark order as shipped
  *     tags:
  *       - Deliveries
  *     security:
