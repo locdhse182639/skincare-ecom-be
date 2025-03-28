@@ -63,7 +63,11 @@ export const deleteQuiz = async (req: Request, res: Response) => {
 
 export const submitQuiz = async (req: Request, res: Response) => {
   try {
-    const { userId, answers } = req.body;
+    const {quizId, userId, answers } = req.body;
+
+    if (!quizId) {
+      return res.status(400).json({ message: "Quiz ID is required." });
+    }
 
     let totalPoints = 0;
     for (const answer of answers) {
@@ -83,7 +87,7 @@ export const submitQuiz = async (req: Request, res: Response) => {
 
     const quizResult = new QuizResultModel({
       userId,
-      quizId: req.params.id,
+      quizId,
       answers,
       totalPoints,
       skinType,
