@@ -5,7 +5,7 @@ import {
   updateFAQ,
   deleteFAQ,
   restoreFAQ,
-} from "../controllers/FAQ.controller";
+} from "../controllers/faq.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
 
 const router = express.Router();
