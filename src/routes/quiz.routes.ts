@@ -177,19 +177,27 @@ router.delete("/:id", authMiddleware, adminMiddleware, deleteQuiz);
  *           schema:
  *             type: object
  *             properties:
+ *               quizId:
+ *                 type: string
+ *                 description: ID của quiz cần submit
  *               userId:
  *                 type: string
+ *                 description: ID của người dùng
  *               answers:
  *                 type: array
+ *                 description: Mảng các câu trả lời
  *                 items:
  *                   type: object
  *                   properties:
  *                     questionId:
  *                       type: string
+ *                       description: ID của câu hỏi
  *                     answerId:
  *                       type: string
+ *                       description: ID của câu trả lời được chọn
  *                     points:
  *                       type: number
+ *                       description: Điểm của câu trả lời
  *     responses:
  *       200:
  *         description: Quiz submitted successfully
